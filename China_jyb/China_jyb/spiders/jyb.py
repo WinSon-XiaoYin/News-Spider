@@ -27,20 +27,6 @@ class JybSpider(RedisSpider):
     		reqs.append(req)
     	return reqs
 
-    def collect(self, url, item):
-        html = requests.get(url)
-        selector = etree.HTML(html.content)
-        titles = selector.xpath('//*[@id="body"]/h1/text()')
-        for title in titles:
-            item['title'] = title
-            # print title.encode('utf-8')
-
-        documents = re.findall('<P>(.*?)</P>', html.content, re.S)
-        for document in documents:
-            content = document.replace('<STRONG>', '').replace('</STRONG>', '').replace('&nbsp;', ' ').replace('<FONT face=仿宋_GB2312', '').replace('color=#0000ff>', '').replace('/FONT', '').replace('<FONT face=仿宋_GB2312>', '').replace('<FONT color=#800000>', '')
-            item['content'] = content
-            # print content
-        return
 
     def parse(self, response):
         urls = []
@@ -52,11 +38,21 @@ class JybSpider(RedisSpider):
                 url = base_url + news_url.replace('./', '')
                 urls.append(url)
 
-
+        items = []
         for i in range(len(urls)):
             item = ChinaJybItem()
-            self.collect(urls[i], item)
-            yield item
+            html = requests.get(urls[i])
+            selector = etree.HTML(html.content)
+            titles = selector.xpath('//*[@id="body"]/h1/text()')
+            for title in titles:
+                item['title'] = title
+                
+
+            documents = re.findall('<P>(.*?)</P>', html.content, re.S)
+            for document in documents:
+                item['content'] = document
+            items.append(item)
+        yield items
 
 
 
